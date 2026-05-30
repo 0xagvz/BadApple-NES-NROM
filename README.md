@@ -48,7 +48,7 @@ Any NES emulator that supports:
 ### If you're using my emulator:
 
 ```bash
-../nes_emulator <pathToRom.nes>
+./nes_emulator <pathToRom.nes>
 ```
 
 ## Build requirements
