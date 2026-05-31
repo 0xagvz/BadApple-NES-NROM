@@ -11,7 +11,7 @@ This is a Nintendo Entertainment System ROM that plays the MV of
 
 It renders the video at:
 
-**10x9 resolution @ 1 FPS**
+**16x12 resolution @ 5 FPS** (_Improved, before: 10x9 @ 1fps_)
 
 
 ## Why is the quality so low?
@@ -66,6 +66,11 @@ To build the ROM from source, you need the following tools installed:
 ### Python
 
 - Python 3.x
+- `opencv-python` and `numpy` (install via `pip install opencv-python numpy`)
+
+### Other Tools
+
+- `ffmpeg` (required by the Python encoder script for video processing)
 
 
 ## Build system
@@ -76,13 +81,13 @@ The process is split into two main parts:
 
 ### Video conversion
 
-The `video` target converts the source MP4 into NES-compatible assembly data:
+The `video` target converts the source MP4 into NES-compatible binary and assembly data using `utils/BadAppleEncoder.py`:
 
-- Input: `utils/badapplevid.mp4` (download badapple vid for yourself)
-- Output: `badapplevid.s`
-- Parameters:
-  - Resolution: 10x9
-  - FPS: 1
+- Input: `utils/badapple.mp4` (download badapple vid for yourself)
+- Output: `badapple.bin` and `badapplevid.s`
+- Parameters (configurable in the encoder script):
+  - Resolution: 16x12
+  - FPS: 5
 
 ```bash
 make video

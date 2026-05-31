@@ -31,7 +31,7 @@ def videoToBin(input_path, output_path, width=8, height=6, threshold=128):
     cap = cv2.VideoCapture(input_path)
 
     if not cap.isOpened():
-        raise ValueError(f"No se pudo abrir el video: {input_path}")
+        raise ValueError(f"Cannot open video: {input_path}")
 
 
     with open(output_path, "wb") as f:
