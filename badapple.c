@@ -136,6 +136,7 @@ static void run_raw_frames(void) {
     int bit_index;
     uint8_t bit;
     uint16_t addr;
+    int delay_vblanks;
 
     if (vptr >= vend) return;
 
@@ -170,8 +171,9 @@ static void run_raw_frames(void) {
         PPU.control = 0x00;
         PPU.mask = 0x0A;
 
-        waitvsync();
-        waitvsync();
+        for (delay_vblanks = 0; delay_vblanks < 6; ++delay_vblanks) {
+            waitvsync();
+        }
     }
 }
 
