@@ -1,12 +1,8 @@
 #include <stdint.h>
+#include <stddef.h>
 #include <nes.h>
 
 #define CMD_WAIT      0x00
-#define CMD_PPU_WRITE 0x01
-#define CMD_PPU_OFF   0x02
-#define CMD_PPU_ON    0x03
-#define CMD_END       0xFF
-
 #define VIDEO_WIDTH_TILES   14
 #define VIDEO_HEIGHT_TILES  10
 
@@ -25,12 +21,12 @@
 #define VIDEO_OFFSET_X 0
 #define VIDEO_OFFSET_Y -1
 
-extern const uint8_t badapplevid_bin[];
 
-static const uint8_t* stream_src;
-static uint8_t stream_literal_left;
-static uint8_t stream_repeat_left;
-static uint8_t stream_repeat_value;
+extern const uint8_t video_bin[];
+extern const uint8_t video_bin_end[];
+
+#define RAW_VIDEO_WIDTH_PIXELS 16
+#define RAW_VIDEO_HEIGHT_PIXELS 12
 static uint8_t ppu_enabled = 0;
 
 #define PPU_RESET_LATCH() ((void)PPU.status)
@@ -120,99 +116,62 @@ static uint16_t center_nametable_addr(uint16_t addr) {
     return addr;
 }
 
-static uint8_t readVid(void) {
-    int8_t control;
+static void run_raw_frames(void) {
+    const uint8_t* vptr = video_bin;
+    const uint8_t* vend = video_bin_end;
 
-    for (;;) {
-        if (stream_repeat_left) {
-            stream_repeat_left--;
-            return stream_repeat_value;
-        }
+    const int width = RAW_VIDEO_WIDTH_PIXELS;
+    const int height = RAW_VIDEO_HEIGHT_PIXELS;
+    const int bytes_per_row = (width + 7) / 8;
+    const int frame_size = bytes_per_row * height;
+    size_t total_bytes;
+    size_t frames;
+    size_t f;
 
-        if (stream_literal_left) {
-            stream_literal_left--;
-            return *stream_src++;
-        }
-
-        control = (int8_t)(*stream_src++);
-
-        if (control >= 0) {
-            stream_literal_left = (uint8_t)control;
-            return *stream_src++;
-        }
-
-        if (control != -128) {
-            stream_repeat_left = (uint8_t)(1 - control);
-            stream_repeat_value = *stream_src++;
-            stream_repeat_left--;
-            return stream_repeat_value;
-        }
-    }
-}
-
-static void run_stream(void) {
-    uint8_t cmd;
-    uint8_t n;
-    uint8_t len;
-    uint8_t i;
+    const uint8_t* frame_start;
+    const uint8_t* brow;
+    int row;
+    int col;
+    int byte_index;
+    int bit_index;
+    uint8_t bit;
     uint16_t addr;
 
-    stream_src = badapplevid_bin;
-    stream_literal_left = 0;
-    stream_repeat_left = 0;
-    stream_repeat_value = 0;
+    if (vptr >= vend) return;
 
-    for (;;) {
-        cmd = readVid();
+    total_bytes = (size_t)(vend - vptr);
+    frames = total_bytes / frame_size;
 
-        switch (cmd) {
-            case CMD_END:
-                return;
+    for (f = 0; f < frames; ++f) {
+        waitvsync();
+        PPU.mask = 0x00;
 
-            case CMD_WAIT:
-                n = readVid();
-                while (n--) {
-                    waitvsync();
-                }
-                break;
+        frame_start = vptr + f * frame_size;
 
-            case CMD_PPU_WRITE:
-                if (ppu_enabled) {
-                    waitvsync(); 
-                    PPU.mask = 0x00;
-                    ppu_enabled = 0;
-                }
-                
-                addr = ((uint16_t)readVid() << 8) | readVid();
-                len = readVid();
+        for (row = 0; row < height; ++row) {
+            addr = 0x2000 + row * 32;
+            addr = center_nametable_addr(addr);
+            ppu_set_addr(addr);
 
-                addr = center_nametable_addr(addr);
-                ppu_set_addr(addr);
+            brow = frame_start + row * bytes_per_row;
 
-                for (i = 0; i < len; i++) {
-                    PPU.vram.data = readVid();
-                }
-                break;
-
-            case CMD_PPU_OFF:
-                waitvsync(); 
-                PPU.mask = 0x00;
-                ppu_enabled = 0;
-                break;
-
-            case CMD_PPU_ON:
-                waitvsync(); 
-                PPU_RESET_LATCH();
-                PPU.scroll = 0x04;
-                PPU.scroll = 0x02;
-                PPU.control = 0x00;
-                PPU.mask = 0x0A;
-                ppu_enabled = 1;
-                break;
-
-            default:
-                return;
+            for (col = 0; col < width; ++col) {
+                byte_index = col / 8;
+                bit_index = 7 - (col & 7);
+                bit = (brow[byte_index] >> bit_index) & 1;
+                PPU.vram.data = bit ? 1 : 0;
+            }
         }
+
+        waitvsync();
+        PPU_RESET_LATCH();
+        PPU.scroll = 0x04;
+        PPU.scroll = 0x02;
+        PPU.control = 0x00;
+        PPU.mask = 0x0A;
+
+        waitvsync();
+        waitvsync();
     }
 }
 
@@ -236,7 +195,7 @@ void main(void) {
     PPU.scroll = 0x00;
     PPU.scroll = 0x00;
 
-    run_stream();
+    run_raw_frames();
 
     while (1) {
         waitvsync();
