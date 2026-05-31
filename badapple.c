@@ -3,23 +3,23 @@
 #include <nes.h>
 
 #define CMD_WAIT      0x00
-#define VIDEO_WIDTH_TILES   14
-#define VIDEO_HEIGHT_TILES  10
+#define VIDEO_WIDTH_TILES   RAW_VIDEO_WIDTH_PIXELS
+#define VIDEO_HEIGHT_TILES  RAW_VIDEO_HEIGHT_PIXELS
 
 #define SCREEN_WIDTH_TILES  32
 #define SCREEN_HEIGHT_TILES 30
 
-#define FRAME_WIDTH_TILES   (VIDEO_WIDTH_TILES -2)
-#define FRAME_HEIGHT_TILES  (VIDEO_HEIGHT_TILES)
+#define FRAME_WIDTH_TILES   (VIDEO_WIDTH_TILES + 2)
+#define FRAME_HEIGHT_TILES  (VIDEO_HEIGHT_TILES + 2)
 
-#define FRAME_X ((SCREEN_WIDTH_TILES - FRAME_WIDTH_TILES) / 2) + 1
-#define FRAME_Y ((SCREEN_HEIGHT_TILES - FRAME_HEIGHT_TILES) / 2)
+#define VIDEO_OFFSET_X 0
+#define VIDEO_OFFSET_Y 1
+
+#define FRAME_X (((SCREEN_WIDTH_TILES - FRAME_WIDTH_TILES) / 2) + 1 + (VIDEO_OFFSET_X))
+#define FRAME_Y ((SCREEN_HEIGHT_TILES - FRAME_HEIGHT_TILES) / 2 + (VIDEO_OFFSET_Y))
 
 #define VIDEO_X (FRAME_X + 1)
 #define VIDEO_Y (FRAME_Y + 1)
-
-#define VIDEO_OFFSET_X 0
-#define VIDEO_OFFSET_Y -1
 
 
 extern const uint8_t video_bin[];
@@ -90,7 +90,7 @@ static void draw_border(void) {
         PPU.vram.data = 1;
     }
 
-    ppu_set_addr(base + (FRAME_HEIGHT_TILES ) * 32);
+    ppu_set_addr(base + (FRAME_HEIGHT_TILES - 1) * 32);
     for (i = 0; i < FRAME_WIDTH_TILES; i++) {
         PPU.vram.data = 1;
     }
