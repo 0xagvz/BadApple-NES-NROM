@@ -1,7 +1,13 @@
 # Bad Apple on NES (NROM - 32KB)
 
 <p align="center">
-  <img src="Logo.png" width="200">
+  <img src="Logo.png" width="300">
+</p>
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=by-lQ6QA38I">
+    Watch the demo on YouTube
+  </a>
 </p>
 
 ---
