@@ -27,7 +27,7 @@ def ffmpeg(input_path, output_path, fps):
 
 
 
-def videoToBin(input_path, output_path, width=8, height=6, threshold=128):
+def videoToBin(input_path, output_path, width=16, height=12):
     cap = cv2.VideoCapture(input_path)
 
     if not cap.isOpened():
@@ -40,21 +40,16 @@ def videoToBin(input_path, output_path, width=8, height=6, threshold=128):
             if not ret:
                 break
 
-            frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_NEAREST)
+            frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_AREA)
 
             if len(frame.shape) == 3:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             else:
                 gray = frame
 
-            _, bw = cv2.threshold(gray, threshold, 1, cv2.THRESH_BINARY)
+            bw = (gray >= 90).astype(np.uint8)
 
-            pad = (8 - (width % 8)) % 8
-            if pad:
-                bw = np.pad(bw, ((0, 0), (0, pad)), mode="constant")
-
-            packed = np.packbits(bw.astype(np.uint8), axis=1, bitorder="big")
-
+            packed = np.packbits(bw, axis=1, bitorder="big")
             f.write(packed.tobytes())
 
     cap.release()

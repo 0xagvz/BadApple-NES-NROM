@@ -20,7 +20,7 @@ badapplevid.o: badapplevid.s
 badapplevid.s: badapple.bin
 	printf '.segment "RODATA"\n.export _video_bin\n.export _video_bin_end\n_video_bin:\n.incbin "badapple.bin"\n_video_bin_end:\n' > badapplevid.s
 
-badapple.bin:
+badapple.bin: utils/BadAppleEncoder.py utils/badapple.mp4
 	python3 ./utils/BadAppleEncoder.py utils/badapple.mp4
 
 video: badapple.bin badapplevid.s
